@@ -2,35 +2,36 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from '../utils/axios';
-import PrayerChecklist from '../components/PrayerChecklist';
 import DownloadButtons from '../components/DownloadButtons';
-import { Book, CircleDot, Trophy, ArrowRight, Calendar, Star } from 'lucide-react';
+import { Book, CircleDot, Trophy, ArrowRight, Calendar, Star, Heart, RefreshCw } from 'lucide-react';
+import duas from '../data/dua'; // <-- import the array
 
 export default function Dashboard() {
-  const [prayers, setPrayers] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [totalDhikr, setTotalDhikr] = useState(0);
   const [monthlyCompletion, setMonthlyCompletion] = useState(0);
   const [globalRank, setGlobalRank] = useState('#?');
+  const [duaOfDay, setDuaOfDay] = useState(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchTodayPrayers();
     fetchTotalDhikr();
     fetchMonthlyCompletion();
     fetchUserRank();
+    setDailyDua(); // set dua based on current date
   }, []);
 
-  const fetchTodayPrayers = async () => {
-    try {
-      const res = await axios.get('/prayer/today');
-      setPrayers(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  // Helper to get a deterministic index based on date
+  const getDailyDuaIndex = () => {
+    const today = new Date();
+    // Create a number from year, month, day (e.g., 2026312 for 2026-03-12)
+    const dateNum = today.getFullYear() * 1000 + (today.getMonth() + 1) * 50 + today.getDate();
+    return dateNum % duas.length;
+  };
+
+  const setDailyDua = () => {
+    const index = getDailyDuaIndex();
+    setDuaOfDay(duas[index]);
   };
 
   const fetchTotalDhikr = async () => {
@@ -48,7 +49,7 @@ export default function Dashboard() {
     try {
       const now = new Date();
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1);
+      const month = String(now.getMonth() + 1).padStart(2, '0');
       const res = await axios.get(`/prayerbook/stats/${year}/${month}`);
       if (res.data.success) {
         setMonthlyCompletion(res.data.data.completionRate || 0);
@@ -62,7 +63,6 @@ export default function Dashboard() {
     try {
       const res = await axios.get('/leaderboard/rank');
       if (res.data.success) {
-        // Use streak rank if available, otherwise all‑days rank
         const rank = res.data.data.streakRank || res.data.data.allDaysRank;
         setGlobalRank(rank ? `#${rank}` : '#?');
       }
@@ -71,26 +71,14 @@ export default function Dashboard() {
     }
   };
 
-  const updatePrayer = async (updates) => {
-    try {
-      const res = await axios.put('/prayer/today', updates);
-      setPrayers(res.data);
-    } catch (err) {
-      alert(err.response?.data?.error || 'Update failed');
-    }
+  // Manual refresh – picks a random different dua (overrides daily)
+  const pickRandomDua = () => {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * duas.length);
+    } while (duas[newIndex] === duaOfDay && duas.length > 1);
+    setDuaOfDay(duas[newIndex]);
   };
-
-  const completedCount = prayers ? Object.values(prayers).filter(v => v === true).length : 0;
-  const progressPercent = (completedCount / 5) * 100;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-        <p className="mt-4 text-slate-600 font-medium">Loading your progress...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
@@ -99,10 +87,15 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto flex justify-between items-start">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              Assalamu Alaikum, <span className="text-emerald-200">{user?.name || 'User'}</span>!
+              Assalamu Alaikum,{' '}
+              <span className="text-emerald-200">{user?.name || 'User'}</span>!
             </h1>
             <p className="text-emerald-100/80 mt-1 text-sm md:text-base">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
             </p>
           </div>
           <div className="hidden md:flex bg-emerald-600/50 backdrop-blur-md rounded-full px-4 py-2 items-center gap-2 border border-emerald-400/30">
@@ -140,38 +133,14 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content: Prayer Checklist */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">Today's Prayers</h2>
-                  <p className="text-slate-500 text-sm">Keep up the consistency!</p>
-                </div>
-                {/* Progress Bar */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-2 w-32 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all duration-500"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-bold text-emerald-700">{completedCount}/5</span>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <PrayerChecklist prayers={prayers} onUpdate={updatePrayer} />
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar: Downloads & Extras */}
-          <div className="space-y-6">
+        {/* Reports and Summary Grid */}
+        <div className="max-w-2xl mx-auto lg:mx-0 lg:max-w-none">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-6 text-white shadow-lg">
               <h3 className="font-bold text-lg mb-2">Generate Reports</h3>
-              <p className="text-emerald-100 text-sm mb-6">Download your prayer history as a PDF or Excel sheet.</p>
+              <p className="text-emerald-100 text-sm mb-6">
+                Download your prayer history as a PDF or Excel sheet.
+              </p>
               <DownloadButtons variant="light" />
             </div>
 
@@ -188,12 +157,73 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Daily Dua Section */}
+        {duaOfDay && (
+          <div className="mt-8 max-w-3xl mx-auto lg:mx-0">
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                  <h3 className="font-bold text-lg text-slate-800">دعائے امروز • आज की दुआ</h3>
+                  <span className="text-xs text-slate-400 px-2 py-1 bg-slate-100 rounded-full">Daily Dua</span>
+                </div>
+                <button
+                  onClick={pickRandomDua}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  title="New Dua"
+                >
+                  <RefreshCw className="w-4 h-4 text-slate-500" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Arabic */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">العربية</span>
+                  </div>
+                  <p className="font-arabic text-xl md:text-2xl text-emerald-700 leading-loose" dir="rtl">
+                    {duaOfDay.arabic}
+                  </p>
+                </div>
+
+                {/* Urdu */}
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">اردو</span>
+                  </div>
+                  <p className="text-slate-600 text-base md:text-lg font-urdu" dir="rtl">
+                    {duaOfDay.urdu}
+                  </p>
+                </div>
+
+                {/* Hindi */}
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded">हिन्दी</span>
+                  </div>
+                  <p className="text-slate-600 text-base md:text-lg">
+                    {duaOfDay.hindi}
+                  </p>
+                </div>
+
+                {/* Reference */}
+                <div className="flex justify-end pt-2">
+                  <span className="text-xs text-slate-400 bg-slate-50 px-3 py-1 rounded-full">
+                    {duaOfDay.reference}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Helper Components
+// Helper Components (NavCard, SummaryRow) – same as before
 function NavCard({ title, desc, icon, borderColor, onClick }) {
   return (
     <button
@@ -216,7 +246,7 @@ function NavCard({ title, desc, icon, borderColor, onClick }) {
 
 function SummaryRow({ label, value }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+    <div className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">
       <span className="text-slate-500 text-sm">{label}</span>
       <span className="font-bold text-slate-700">{value}</span>
     </div>

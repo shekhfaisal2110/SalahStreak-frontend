@@ -13,6 +13,7 @@ import TasbeehCounter from './components/TasbeehCounter';
 import Dashboard from './pages/Dashboard'; // <-- import Dashboard
 import { Toaster } from 'react-hot-toast';
 import Leaderboard from './pages/Leaderboard';
+import TasbeehDailySummaryPage from './components/TasbeehDailySummary';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -42,6 +43,8 @@ function App() {
           {/* Root path now goes to Dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/tasbeeh/summary" element={<ProtectedRoute><TasbeehDailySummaryPage /></ProtectedRoute>} />
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>

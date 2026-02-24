@@ -78,3 +78,8 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+
+export const getMe = async (req, res) => {
+  res.json({ success: true, user: { ...req.user.toObject(), totalSteps: req.user.totalSteps } });
+};

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
-import { Plus, RotateCcw, Trash2, CheckCircle, Star, PlusCircle, Fingerprint, X, Edit2, ArrowLeft } from 'lucide-react';
+import {
+  Plus, RotateCcw, Trash2, CheckCircle, Star, PlusCircle, Fingerprint,
+  X, Edit2, ArrowLeft, Pin, Eye, EyeOff, BarChart3
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const TasbeehList = () => {
@@ -26,6 +29,28 @@ const TasbeehList = () => {
       toast.error('Failed to load tasbeeh list');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const togglePin = async (id) => {
+    try {
+      const { data } = await axios.put(`/tasbeeh/${id}/pin`);
+      if (data.success) {
+        setTasbeehs(prev => prev.map(t => t._id === id ? data.data : t));
+      }
+    } catch (error) {
+      toast.error('Failed to update pin');
+    }
+  };
+
+  const toggleShowCount = async (id) => {
+    try {
+      const { data } = await axios.put(`/tasbeeh/${id}/show`);
+      if (data.success) {
+        setTasbeehs(prev => prev.map(t => t._id === id ? data.data : t));
+      }
+    } catch (error) {
+      toast.error('Failed to update visibility');
     }
   };
 
@@ -102,11 +127,20 @@ const TasbeehList = () => {
   };
 
   const handleReset = async (id) => {
+    if (!window.confirm('Are you sure you want to reset this tasbeeh?')) return;
+
+    setTasbeehs(prev => prev.map(t =>
+      t._id === id ? { ...t, currentCount: 0, completed: false, completedAt: null } : t
+    ));
+
     try {
       const { data } = await axios.put(`/tasbeeh/${id}/reset`);
-      setTasbeehs(prev => prev.map(t => t._id === id ? data.data : t));
+      setTasbeehs(prev => prev.map(t =>
+        t._id === id ? { ...data.data, pinned: t.pinned, showCount: t.showCount } : t
+      ));
     } catch (error) {
       toast.error('Failed to reset');
+      fetchTasbeehs();
     }
   };
 
@@ -121,6 +155,8 @@ const TasbeehList = () => {
     }
   };
 
+  const sortedTasbeehs = [...tasbeehs].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
@@ -131,7 +167,7 @@ const TasbeehList = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
-      {/* Header with back button */}
+      {/* Header with back button and summary icon */}
       <nav className="bg-white border-b border-slate-200 px-6 py-6 sticky top-0 z-20">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -147,29 +183,37 @@ const TasbeehList = () => {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Digital Tasbeeh</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/tasbeeh/new')}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-90"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* New icon to navigate to summary page */}
+            <button
+              onClick={() => navigate('/tasbeeh/summary')}
+              className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-full transition-colors"
+              aria-label="View Summary"
+            >
+              <BarChart3 className="w-6 h-6" />
+            </button>
+            <button
+              onClick={() => navigate('/tasbeeh/new')}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-2xl shadow-lg shadow-emerald-100 transition-all active:scale-90"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </nav>
 
-      {/* Rest of the component remains unchanged */}
       <div className="max-w-5xl mx-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tasbeehs.map(tasbeeh => {
+          {sortedTasbeehs.map(tasbeeh => {
             const progress = (tasbeeh.currentCount / tasbeeh.targetCount) * 100;
             const isDone = tasbeeh.completed;
 
             return (
-              <div key={tasbeeh._id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group">
+              <div key={tasbeeh._id} className={`bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group ${tasbeeh.pinned ? 'ring-2 ring-amber-400' : ''}`}>
                 <div
                   className="absolute bottom-0 left-0 w-full bg-emerald-50/50 transition-all duration-1000 ease-in-out"
                   style={{ height: `${progress}%` }}
                 />
-
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
                     <div>
@@ -181,10 +225,32 @@ const TasbeehList = () => {
                       )}
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => handleReset(tasbeeh._id)} className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+                      <button
+                        onClick={() => togglePin(tasbeeh._id)}
+                        className={`p-2 rounded-full transition-colors ${
+                          tasbeeh.pinned
+                            ? 'text-amber-600 hover:text-amber-700 bg-amber-50'
+                            : 'text-slate-300 hover:text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Pin size={18} fill={tasbeeh.pinned ? 'currentColor' : 'none'} />
+                      </button>
+                      <button
+                        onClick={() => toggleShowCount(tasbeeh._id)}
+                        className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
+                      >
+                        {tasbeeh.showCount ? <Eye size={18} /> : <EyeOff size={18} />}
+                      </button>
+                      <button
+                        onClick={() => handleReset(tasbeeh._id)}
+                        className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
+                      >
                         <RotateCcw size={18} />
                       </button>
-                      <button onClick={() => handleDelete(tasbeeh._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                      <button
+                        onClick={() => handleDelete(tasbeeh._id)}
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                      >
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -194,7 +260,7 @@ const TasbeehList = () => {
                     <div className="relative mb-8">
                       <div className="text-center">
                         <span className="text-7xl font-black text-slate-900 tabular-nums">
-                          {tasbeeh.currentCount}
+                          {tasbeeh.showCount ? tasbeeh.currentCount : '•••'}
                         </span>
                         <div className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-widest flex items-center justify-center gap-2">
                           <span>Goal: {tasbeeh.targetCount}</span>
@@ -255,7 +321,7 @@ const TasbeehList = () => {
         )}
       </div>
 
-      {/* Custom Increment Modal */}
+      {/* Custom Increment Modal (unchanged) */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 relative">
@@ -296,7 +362,7 @@ const TasbeehList = () => {
         </div>
       )}
 
-      {/* Edit Goal Modal */}
+      {/* Edit Goal Modal (unchanged) */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 relative">

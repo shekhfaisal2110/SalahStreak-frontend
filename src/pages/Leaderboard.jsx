@@ -81,11 +81,10 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20">
-      {/* Header Section */}
+      {/* Header Section (unchanged) */}
       <div className="bg-white border-b border-slate-200 pt-10 pb-6 px-6">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex items-center gap-4">
-            {/* Back button */}
             <button
               onClick={() => navigate('/')}
               className="p-2 hover:bg-slate-50 rounded-full transition-colors"
@@ -101,7 +100,6 @@ export default function Leaderboard() {
             </div>
           </div>
 
-          {/* User's Personal Stats Card – three blocks */}
           <div className="flex bg-slate-900 rounded-[2rem] p-2 shadow-xl shadow-slate-200">
             <UserStatBlock
               label="Days Rank"
@@ -130,19 +128,16 @@ export default function Leaderboard() {
           <TabButton
             active={activeTab === 'allDays'}
             onClick={() => handleTabChange('allDays')}
-            icon={<CalendarCheck size={18} />}
             label="Consistency"
           />
           <TabButton
             active={activeTab === 'streak'}
             onClick={() => handleTabChange('streak')}
-            icon={<TrendingUp size={18} />}
             label="Active Streaks"
           />
           <TabButton
             active={activeTab === 'dhikr'}
             onClick={() => handleTabChange('dhikr')}
-            icon={<Star size={18} />}
             label="Total Dhikr"
           />
         </div>
@@ -154,44 +149,61 @@ export default function Leaderboard() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Podium Section */}
+            {/* Top 3 – Desktop Podium */}
             {topThree.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-10 pb-4">
-                {/* 2nd Place */}
-                {topThree[1] && (
-                  <PodiumCard
-                    item={topThree[1]}
-                    rank={2}
-                    color="text-slate-400"
-                    unit={unit}
-                    rankKey={rankKey}
-                  />
-                )}
-                {/* 1st Place */}
-                {topThree[0] && (
-                  <PodiumCard
-                    item={topThree[0]}
-                    rank={1}
-                    color="text-amber-400"
-                    unit={unit}
-                    rankKey={rankKey}
-                    isGold
-                  />
-                )}
-                {/* 3rd Place */}
-                {topThree[2] && (
-                  <PodiumCard
-                    item={topThree[2]}
-                    rank={3}
-                    color="text-amber-700"
-                    unit={unit}
-                    rankKey={rankKey}
-                  />
-                )}
-              </div>
+              <>
+                <div className="hidden md:grid md:grid-cols-3 gap-4 items-end pt-10 pb-4">
+                  {/* 2nd Place */}
+                  {topThree[1] && (
+                    <PodiumCard
+                      item={topThree[1]}
+                      rank={2}
+                      color="text-slate-400"
+                      unit={unit}
+                      rankKey={rankKey}
+                    />
+                  )}
+                  {/* 1st Place */}
+                  {topThree[0] && (
+                    <PodiumCard
+                      item={topThree[0]}
+                      rank={1}
+                      color="text-amber-400"
+                      unit={unit}
+                      rankKey={rankKey}
+                      isGold
+                    />
+                  )}
+                  {/* 3rd Place */}
+                  {topThree[2] && (
+                    <PodiumCard
+                      item={topThree[2]}
+                      rank={3}
+                      color="text-amber-700"
+                      unit={unit}
+                      rankKey={rankKey}
+                    />
+                  )}
+                </div>
+
+                {/* Top 3 – Mobile List */}
+                <div className="md:hidden space-y-2">
+                  {topThree.map((item, index) => (
+                    <LeaderboardRow
+                      key={index}
+                      item={item}
+                      rank={index + 1}
+                      isUser={item.email === user?.email}
+                      rankKey={rankKey}
+                      unit={unit}
+                      showMedal={true}
+                    />
+                  ))}
+                </div>
+              </>
             )}
 
-            {/* List Section */}
+            {/* Remaining List */}
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
               <div className="divide-y divide-slate-50">
                 {remaining.map((item, index) => (
@@ -202,6 +214,7 @@ export default function Leaderboard() {
                     isUser={item.email === user?.email}
                     rankKey={rankKey}
                     unit={unit}
+                    showMedal={false}
                   />
                 ))}
               </div>
@@ -213,7 +226,7 @@ export default function Leaderboard() {
   );
 }
 
-// --- Sub-Components (unchanged) ---
+// --- Sub-Components ---
 const UserStatBlock = ({ label, value, active }) => (
   <div className={`px-6 py-3 rounded-[1.5rem] text-center transition-colors ${active ? 'bg-emerald-600' : ''}`}>
     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1">{label}</p>
@@ -249,33 +262,50 @@ const PodiumCard = ({ item, rank, color, unit, rankKey, isGold }) => (
   </div>
 );
 
-const LeaderboardRow = ({ item, rank, isUser, rankKey, unit }) => (
-  <div
-    className={`flex items-center justify-between p-6 transition-colors ${
-      isUser ? 'bg-emerald-50/50' : 'hover:bg-slate-50'
-    }`}
-  >
-    <div className="flex items-center gap-6">
-      <span className="w-8 text-sm font-black text-slate-300">#{rank}</span>
-      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold uppercase">
-        {(item.name || 'U').charAt(0)}
+const LeaderboardRow = ({ item, rank, isUser, rankKey, unit, showMedal }) => {
+  const getMedalColor = () => {
+    if (rank === 1) return 'text-yellow-500';
+    if (rank === 2) return 'text-gray-400';
+    if (rank === 3) return 'text-amber-700';
+    return '';
+  };
+
+  return (
+    <div
+      className={`flex items-center justify-between p-4 transition-colors ${
+        isUser ? 'bg-emerald-50/50' : 'hover:bg-slate-50'
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        <span className="w-8 text-sm font-black text-slate-300">#{rank}</span>
+        {showMedal ? (
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getMedalColor()}`}>
+            {rank === 1 && <Crown size={20} fill="currentColor" />}
+            {rank === 2 && <Medal size={20} />}
+            {rank === 3 && <Medal size={20} />}
+          </div>
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold uppercase">
+            {(item.name || 'U').charAt(0)}
+          </div>
+        )}
+        <div>
+          <h4 className="font-bold text-slate-800 flex items-center gap-2">
+            {item.name || item.userInfo?.name}
+            {isUser && (
+              <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">You</span>
+            )}
+          </h4>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Achiever</p>
+        </div>
       </div>
-      <div>
-        <h4 className="font-bold text-slate-800 flex items-center gap-2">
-          {item.name || item.userInfo?.name}
-          {isUser && (
-            <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">You</span>
-          )}
-        </h4>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Achiever</p>
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <p className="text-lg font-black text-slate-900">{item[rankKey]}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase">{unit}</p>
+        </div>
+        <ChevronRight className="text-slate-200" size={16} />
       </div>
     </div>
-    <div className="flex items-center gap-4">
-      <div className="text-right">
-        <p className="text-lg font-black text-slate-900">{item[rankKey]}</p>
-        <p className="text-[10px] font-bold text-slate-400 uppercase">{unit}</p>
-      </div>
-      <ChevronRight className="text-slate-200" size={16} />
-    </div>
-  </div>
-);
+  );
+};

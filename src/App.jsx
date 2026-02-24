@@ -14,6 +14,11 @@ import Dashboard from './pages/Dashboard'; // <-- import Dashboard
 import { Toaster } from 'react-hot-toast';
 import Leaderboard from './pages/Leaderboard';
 import TasbeehDailySummaryPage from './components/TasbeehDailySummary';
+import QuranTracker from './pages/QuranTracker';
+import Tasks from './pages/Tasks';
+import TaskCalendar from './pages/TaskCalendar';
+import TaskLog from './pages/TaskLog';
+import TaskOverview from './pages/TaskOverview';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -44,6 +49,11 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/tasbeeh/summary" element={<ProtectedRoute><TasbeehDailySummaryPage /></ProtectedRoute>} />
+          <Route path="/quran" element={<ProtectedRoute><QuranTracker /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+          <Route path="/tasks/:taskId" element={<ProtectedRoute><TaskCalendar /></ProtectedRoute>} />
+          <Route path="/tasks/log" element={<ProtectedRoute><TaskLog /></ProtectedRoute>} />
+          <Route path="/tasks/overview" element={<ProtectedRoute><TaskOverview /></ProtectedRoute>} />
 
         </Routes>
       </AuthProvider>

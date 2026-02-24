@@ -1,16 +1,56 @@
-# React + Vite
+# Salah Streak 🕌
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Track your daily prayers, dhikr, and compete on the leaderboard – all in one beautiful Islamic app. Build consistency in your worship with streaks, detailed reports, and a supportive community.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- ✅ **Prayer Tracking** – Log your five daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) with a beautiful, responsive calendar.
+- 🔥 **Streak Counter** – Maintain your streak by completing all prayers daily. The streak updates in real-time.
+- 📊 **Monthly Summaries** – View detailed statistics and download reports as PDF (weekly, monthly, yearly).
+- 📿 **Tasbeeh Counter** – Create custom dhikr lists, tap to count, reset, or add custom amounts. A "Masha Allah" toast appears on completion.
+- 🏆 **Leaderboard** – Compete with the community in three categories: Consistency (all days completed), Active Streaks, and Total Dhikr.
+- 🗓️ **Hijri Dates** – Islamic dates are displayed alongside Gregorian (fetched from Aladhan API).
+- 📧 **Email Notifications** – OTP verification for signup, password reset, and missed prayer reminders (via Brevo).
+- 📱 **Fully Responsive** – Works perfectly on mobile, tablet, and desktop.
+- 🌙 **Islamic Design** – Calm, spiritual UI with Arabic calligraphy and duas in the footer.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+**Frontend**
+- React (Vite)
+- Tailwind CSS
+- React Router DOM
+- Axios
+- Lucide React Icons
+- React Hot Toast
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Backend**
+- Node.js + Express
+- MongoDB + Mongoose
+- JSON Web Tokens (JWT)
+- Bcrypt.js
+- Brevo (Sendinblue) for emails
+- PDFKit for report generation
+- Node-Cron for scheduled reminders
+
+**External APIs**
+- [Aladhan API](https://aladhan.com/islamic-calendar-api) – for accurate Hijri dates.
+
+## 🚀 Live Demo
+
+The app is deployed at: [https://salah-streak.netlify.app](https://salah-streak.netlify.app)
+
+*Backend is hosted on Render (may take a few seconds to spin up).*
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js (v16 or higher)
+- MongoDB Atlas account (or local MongoDB)
+- Brevo (Sendinblue) account for email services
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/yourusername/salah-streak.git
+cd salah-streak

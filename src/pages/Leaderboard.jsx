@@ -1,3 +1,324 @@
+// import React, { useEffect, useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAuth } from '../context/AuthContext';
+// import axios from '../utils/axios';
+// import { Trophy, Medal, TrendingUp, CalendarCheck, Crown, ChevronRight, Star, ArrowLeft } from 'lucide-react';
+// import toast from 'react-hot-toast';
+
+// export default function Leaderboard() {
+//   const { user } = useAuth();
+//   const navigate = useNavigate();
+//   const [activeTab, setActiveTab] = useState('allDays');
+//   const [allDaysData, setAllDaysData] = useState([]);
+//   const [streakData, setStreakData] = useState([]);
+//   const [dhikrData, setDhikrData] = useState([]);
+//   const [userRank, setUserRank] = useState({ allDaysRank: null, streakRank: null, dhikrRank: null });
+//   const [loading, setLoading] = useState(false);
+
+//   useEffect(() => {
+//     fetchLeaderboard(activeTab);
+//     fetchUserRank();
+//   }, []);
+
+//   const fetchLeaderboard = async (type) => {
+//     setLoading(true);
+//     try {
+//       let endpoint;
+//       if (type === 'allDays') endpoint = '/leaderboard/all-days-completed';
+//       else if (type === 'streak') endpoint = '/leaderboard/streak';
+//       else endpoint = '/leaderboard/total-dhikr';
+
+//       const { data } = await axios.get(endpoint);
+//       if (data.success) {
+//         if (type === 'allDays') setAllDaysData(data.data);
+//         else if (type === 'streak') setStreakData(data.data);
+//         else setDhikrData(data.data);
+//       }
+//     } catch (error) {
+//       toast.error('Failed to load leaderboard');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const fetchUserRank = async () => {
+//     try {
+//       const { data } = await axios.get('/leaderboard/rank');
+//       if (data.success) {
+//         setUserRank(data.data);
+//       }
+//     } catch (error) {
+//       console.error('Failed to fetch user rank');
+//     }
+//   };
+
+//   const handleTabChange = (tab) => {
+//     setActiveTab(tab);
+//     if (tab === 'allDays' && allDaysData.length === 0) {
+//       fetchLeaderboard('allDays');
+//     } else if (tab === 'streak' && streakData.length === 0) {
+//       fetchLeaderboard('streak');
+//     } else if (tab === 'dhikr' && dhikrData.length === 0) {
+//       fetchLeaderboard('dhikr');
+//     }
+//   };
+
+//   const data = activeTab === 'allDays' ? allDaysData : activeTab === 'streak' ? streakData : dhikrData;
+//   let unit, rankKey;
+//   if (activeTab === 'allDays') {
+//     unit = 'Days';
+//     rankKey = 'count';
+//   } else if (activeTab === 'streak') {
+//     unit = 'Streak';
+//     rankKey = 'streak';
+//   } else {
+//     unit = 'Dhikr';
+//     rankKey = 'totalDhikr';
+//   }
+
+//   const topThree = data.slice(0, 3);
+//   const remaining = data.slice(3);
+
+//   return (
+//     <div className="min-h-screen bg-[#F8FAFC] pb-20">
+//       {/* Header Section (unchanged) */}
+//       <div className="bg-white border-b border-slate-200 pt-10 pb-6 px-6">
+//         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+//           <div className="flex items-center gap-4">
+//             <button
+//               onClick={() => navigate('/')}
+//               className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+//               aria-label="Back to Dashboard"
+//             >
+//               <ArrowLeft className="w-5 h-5 text-slate-600" />
+//             </button>
+//             <div>
+//               <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm uppercase tracking-widest mb-2">
+//                 <Trophy size={16} /> Community
+//               </div>
+//               <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hall of Fame</h1>
+//             </div>
+//           </div>
+
+//           <div className="flex bg-slate-900 rounded-[2rem] p-2 shadow-xl shadow-slate-200">
+//             <UserStatBlock
+//               label="Days Rank"
+//               value={userRank.allDaysRank ? `#${userRank.allDaysRank}` : '--'}
+//               active={activeTab === 'allDays'}
+//             />
+//             <div className="w-[1px] bg-slate-800 my-4" />
+//             <UserStatBlock
+//               label="Streak Rank"
+//               value={userRank.streakRank ? `#${userRank.streakRank}` : '--'}
+//               active={activeTab === 'streak'}
+//             />
+//             <div className="w-[1px] bg-slate-800 my-4" />
+//             <UserStatBlock
+//               label="Dhikr Rank"
+//               value={userRank.dhikrRank ? `#${userRank.dhikrRank}` : '--'}
+//               active={activeTab === 'dhikr'}
+//             />
+//           </div>
+//         </div>
+//       </div>
+
+//       <main className="max-w-5xl mx-auto p-6">
+//         {/* Tab Switcher */}
+//         <div className="flex p-1 bg-slate-200/50 rounded-2xl mb-8 w-fit mx-auto md:mx-0">
+//           <TabButton
+//             active={activeTab === 'allDays'}
+//             onClick={() => handleTabChange('allDays')}
+//             label="Consistency"
+//           />
+//           <TabButton
+//             active={activeTab === 'streak'}
+//             onClick={() => handleTabChange('streak')}
+//             label="Active Streaks"
+//           />
+//           <TabButton
+//             active={activeTab === 'dhikr'}
+//             onClick={() => handleTabChange('dhikr')}
+//             label="Total Dhikr"
+//           />
+//         </div>
+
+//         {loading ? (
+//           <div className="flex flex-col items-center justify-center py-20 opacity-50">
+//             <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mb-4" />
+//             <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Gathering Champions...</p>
+//           </div>
+//         ) : (
+//           <div className="space-y-8">
+//             {/* Top 3 – Desktop Podium */}
+//             {topThree.length > 0 && (
+//               <>
+//                 <div className="hidden md:grid md:grid-cols-3 gap-4 items-end pt-10 pb-4">
+//                   {/* 2nd Place */}
+//                   {topThree[1] && (
+//                     <PodiumCard
+//                       item={topThree[1]}
+//                       rank={2}
+//                       color="text-slate-400"
+//                       unit={unit}
+//                       rankKey={rankKey}
+//                     />
+//                   )}
+//                   {/* 1st Place */}
+//                   {topThree[0] && (
+//                     <PodiumCard
+//                       item={topThree[0]}
+//                       rank={1}
+//                       color="text-amber-400"
+//                       unit={unit}
+//                       rankKey={rankKey}
+//                       isGold
+//                     />
+//                   )}
+//                   {/* 3rd Place */}
+//                   {topThree[2] && (
+//                     <PodiumCard
+//                       item={topThree[2]}
+//                       rank={3}
+//                       color="text-amber-700"
+//                       unit={unit}
+//                       rankKey={rankKey}
+//                     />
+//                   )}
+//                 </div>
+
+//                 {/* Top 3 – Mobile List */}
+//                 <div className="md:hidden space-y-2">
+//                   {topThree.map((item, index) => (
+//                     <LeaderboardRow
+//                       key={index}
+//                       item={item}
+//                       rank={index + 1}
+//                       isUser={item.email === user?.email}
+//                       rankKey={rankKey}
+//                       unit={unit}
+//                       showMedal={true}
+//                     />
+//                   ))}
+//                 </div>
+//               </>
+//             )}
+
+//             {/* Remaining List */}
+//             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+//               <div className="divide-y divide-slate-50">
+//                 {remaining.map((item, index) => (
+//                   <LeaderboardRow
+//                     key={index}
+//                     item={item}
+//                     rank={index + 4}
+//                     isUser={item.email === user?.email}
+//                     rankKey={rankKey}
+//                     unit={unit}
+//                     showMedal={false}
+//                   />
+//                 ))}
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </main>
+//     </div>
+//   );
+// }
+
+// // --- Sub-Components ---
+// const UserStatBlock = ({ label, value, active }) => (
+//   <div className={`px-6 py-3 rounded-[1.5rem] text-center transition-colors ${active ? 'bg-emerald-600' : ''}`}>
+//     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1">{label}</p>
+//     <p className={`text-xl font-black ${active ? 'text-white' : 'text-slate-200'}`}>{value}</p>
+//   </div>
+// );
+
+// const TabButton = ({ active, onClick, icon, label }) => (
+//   <button
+//     onClick={onClick}
+//     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+//       active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+//     }`}
+//   >
+//     {icon} {label}
+//   </button>
+// );
+
+// const PodiumCard = ({ item, rank, color, unit, rankKey, isGold }) => (
+//   <div
+//     className={`relative bg-white rounded-[2rem] p-6 text-center border border-slate-100 shadow-sm transition-transform hover:scale-105 ${
+//       isGold ? 'md:-translate-y-6 md:shadow-xl ring-2 ring-amber-400/20' : ''
+//     }`}
+//   >
+//     <div className={`w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center bg-slate-50 ${color}`}>
+//       {rank === 1 ? <Crown size={24} fill="currentColor" /> : <Medal size={24} />}
+//     </div>
+//     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Rank #{rank}</p>
+//     <h3 className="font-black text-slate-800 truncate mb-2">{item.name || item.userInfo?.name}</h3>
+//     <div className="inline-block bg-slate-900 text-white px-4 py-1 rounded-full text-xs font-black">
+//       {item[rankKey]} {unit}
+//     </div>
+//   </div>
+// );
+
+// const LeaderboardRow = ({ item, rank, isUser, rankKey, unit, showMedal }) => {
+//   const getMedalColor = () => {
+//     if (rank === 1) return 'text-yellow-500';
+//     if (rank === 2) return 'text-gray-400';
+//     if (rank === 3) return 'text-amber-700';
+//     return '';
+//   };
+
+//   return (
+//     <div
+//       className={`flex items-center justify-between p-4 transition-colors ${
+//         isUser ? 'bg-emerald-50/50' : 'hover:bg-slate-50'
+//       }`}
+//     >
+//       <div className="flex items-center gap-4">
+//         <span className="w-8 text-sm font-black text-slate-300">#{rank}</span>
+//         {showMedal ? (
+//           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getMedalColor()}`}>
+//             {rank === 1 && <Crown size={20} fill="currentColor" />}
+//             {rank === 2 && <Medal size={20} />}
+//             {rank === 3 && <Medal size={20} />}
+//           </div>
+//         ) : (
+//           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold uppercase">
+//             {(item.name || 'U').charAt(0)}
+//           </div>
+//         )}
+//         <div>
+//           <h4 className="font-bold text-slate-800 flex items-center gap-2">
+//             {item.name || item.userInfo?.name}
+//             {isUser && (
+//               <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">You</span>
+//             )}
+//           </h4>
+//           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Achiever</p>
+//         </div>
+//       </div>
+//       <div className="flex items-center gap-4">
+//         <div className="text-right">
+//           <p className="text-lg font-black text-slate-900">{item[rankKey]}</p>
+//           <p className="text-[10px] font-bold text-slate-400 uppercase">{unit}</p>
+//         </div>
+//         <ChevronRight className="text-slate-200" size={16} />
+//       </div>
+//     </div>
+//   );
+// };
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +335,12 @@ export default function Leaderboard() {
   const [dhikrData, setDhikrData] = useState([]);
   const [userRank, setUserRank] = useState({ allDaysRank: null, streakRank: null, dhikrRank: null });
   const [loading, setLoading] = useState(false);
+  const [showRank, setShowRank] = useState(user?.showRank || false);
+
+  // Update local showRank when user changes
+  useEffect(() => {
+    setShowRank(user?.showRank || false);
+  }, [user]);
 
   useEffect(() => {
     fetchLeaderboard(activeTab);
@@ -81,7 +408,7 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20">
-      {/* Header Section (unchanged) */}
+      {/* Header Section */}
       <div className="bg-white border-b border-slate-200 pt-10 pb-6 px-6">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -100,22 +427,23 @@ export default function Leaderboard() {
             </div>
           </div>
 
+          {/* User's Personal Stats Card – respects showRank preference */}
           <div className="flex bg-slate-900 rounded-[2rem] p-2 shadow-xl shadow-slate-200">
             <UserStatBlock
               label="Days Rank"
-              value={userRank.allDaysRank ? `#${userRank.allDaysRank}` : '--'}
+              value={showRank ? (userRank.allDaysRank ? `#${userRank.allDaysRank}` : '--') : '--'}
               active={activeTab === 'allDays'}
             />
             <div className="w-[1px] bg-slate-800 my-4" />
             <UserStatBlock
               label="Streak Rank"
-              value={userRank.streakRank ? `#${userRank.streakRank}` : '--'}
+              value={showRank ? (userRank.streakRank ? `#${userRank.streakRank}` : '--') : '--'}
               active={activeTab === 'streak'}
             />
             <div className="w-[1px] bg-slate-800 my-4" />
             <UserStatBlock
               label="Dhikr Rank"
-              value={userRank.dhikrRank ? `#${userRank.dhikrRank}` : '--'}
+              value={showRank ? (userRank.dhikrRank ? `#${userRank.dhikrRank}` : '--') : '--'}
               active={activeTab === 'dhikr'}
             />
           </div>
@@ -128,16 +456,19 @@ export default function Leaderboard() {
           <TabButton
             active={activeTab === 'allDays'}
             onClick={() => handleTabChange('allDays')}
+            icon={<CalendarCheck size={18} />}
             label="Consistency"
           />
           <TabButton
             active={activeTab === 'streak'}
             onClick={() => handleTabChange('streak')}
+            icon={<TrendingUp size={18} />}
             label="Active Streaks"
           />
           <TabButton
             active={activeTab === 'dhikr'}
             onClick={() => handleTabChange('dhikr')}
+            icon={<Star size={18} />}
             label="Total Dhikr"
           />
         </div>
@@ -146,6 +477,12 @@ export default function Leaderboard() {
           <div className="flex flex-col items-center justify-center py-20 opacity-50">
             <div className="w-8 h-8 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mb-4" />
             <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Gathering Champions...</p>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
+            <Trophy className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-slate-700">No participants yet</h3>
+            <p className="text-slate-500">Check back later when more users join!</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -194,6 +531,7 @@ export default function Leaderboard() {
                       item={item}
                       rank={index + 1}
                       isUser={item.email === user?.email}
+                      showYouTag={showRank}
                       rankKey={rankKey}
                       unit={unit}
                       showMedal={true}
@@ -204,21 +542,24 @@ export default function Leaderboard() {
             )}
 
             {/* Remaining List */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-              <div className="divide-y divide-slate-50">
-                {remaining.map((item, index) => (
-                  <LeaderboardRow
-                    key={index}
-                    item={item}
-                    rank={index + 4}
-                    isUser={item.email === user?.email}
-                    rankKey={rankKey}
-                    unit={unit}
-                    showMedal={false}
-                  />
-                ))}
+            {remaining.length > 0 && (
+              <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                <div className="divide-y divide-slate-50">
+                  {remaining.map((item, index) => (
+                    <LeaderboardRow
+                      key={index}
+                      item={item}
+                      rank={index + 4}
+                      isUser={item.email === user?.email}
+                      showYouTag={showRank}
+                      rankKey={rankKey}
+                      unit={unit}
+                      showMedal={false}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </main>
@@ -226,7 +567,7 @@ export default function Leaderboard() {
   );
 }
 
-// --- Sub-Components ---
+// --- Sub-Components (unchanged) ---
 const UserStatBlock = ({ label, value, active }) => (
   <div className={`px-6 py-3 rounded-[1.5rem] text-center transition-colors ${active ? 'bg-emerald-600' : ''}`}>
     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1">{label}</p>
@@ -262,7 +603,7 @@ const PodiumCard = ({ item, rank, color, unit, rankKey, isGold }) => (
   </div>
 );
 
-const LeaderboardRow = ({ item, rank, isUser, rankKey, unit, showMedal }) => {
+const LeaderboardRow = ({ item, rank, isUser, showYouTag, rankKey, unit, showMedal }) => {
   const getMedalColor = () => {
     if (rank === 1) return 'text-yellow-500';
     if (rank === 2) return 'text-gray-400';
@@ -292,7 +633,7 @@ const LeaderboardRow = ({ item, rank, isUser, rankKey, unit, showMedal }) => {
         <div>
           <h4 className="font-bold text-slate-800 flex items-center gap-2">
             {item.name || item.userInfo?.name}
-            {isUser && (
+            {isUser && showYouTag && (
               <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">You</span>
             )}
           </h4>

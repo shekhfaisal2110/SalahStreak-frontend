@@ -38,7 +38,6 @@ const Register = () => {
         <div className="relative z-10">
           <div className="mb-8">
             <h2 className="text-3xl font-black text-slate-800 tracking-tight">Create Account</h2>
-            <p className="text-slate-500 text-sm mt-1">Join a community of 10,000+ believers</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -55,7 +54,7 @@ const Register = () => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="User Name"
                   className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 font-medium text-slate-700 placeholder:text-slate-300 transition-all"
                   required
                 />

@@ -1,14 +1,206 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAuth } from '../context/AuthContext';
+// import axios from '../utils/axios';
+// import DownloadButtons from '../components/DownloadButtons';
+// import {
+//   Book, CircleDot, Trophy, ArrowRight, Calendar, Star,
+//   Heart, RefreshCw, Sun, Moon, Loader2, BookOpen,
+//   CheckCircle, XCircle, ListTodo, BarChart2, Settings
+// } from 'lucide-react';
+// import toast from 'react-hot-toast';
+// import duas from '../data/dua';
+
+// const prayerList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+
+// export default function Dashboard() {
+//   const [totalDhikr, setTotalDhikr] = useState(0);
+//   const [monthlyCompletion, setMonthlyCompletion] = useState(0);
+//   const [globalRank, setGlobalRank] = useState('#?');
+//   const [duaOfDay, setDuaOfDay] = useState(null);
+//   const [todayPrayers, setTodayPrayers] = useState(null);
+//   const [todayDhikr, setTodayDhikr] = useState(0);
+//   const [topTasbeehs, setTopTasbeehs] = useState([]);
+//   const [showRank, setShowRank] = useState(false);
+//   const [showRankModal, setShowRankModal] = useState(false);
+//   const [firstTimeRankPrompt, setFirstTimeRankPrompt] = useState(false);
+//   const { user, refreshUser } = useAuth();
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     fetchTotalDhikr();
+//     fetchMonthlyCompletion();
+//     fetchUserRank();
+//     fetchTodayPrayers();
+//     fetchTodayDhikr();
+//     setDailyDua();
+//     if (user) {
+//       setShowRank(user.showRank || false);
+//       if (!user.showRank && !localStorage.getItem('rankPromptShown')) {
+//         setFirstTimeRankPrompt(true);
+//       }
+//     }
+//   }, [user]);
+
+//   const getDailyDuaIndex = () => {
+//     const today = new Date();
+//     const dateNum = today.getFullYear() * 1000 + (today.getMonth() + 1) * 50 + today.getDate();
+//     return dateNum % duas.length;
+//   };
+
+//   const setDailyDua = () => {
+//     const index = getDailyDuaIndex();
+//     setDuaOfDay(duas[index]);
+//   };
+
+//   const fetchTotalDhikr = async () => {
+//     try {
+//       const res = await axios.get('/tasbeeh');
+//       const tasbeehs = res.data.data;
+//       const total = tasbeehs.reduce((sum, t) => sum + (t.currentCount || 0), 0);
+//       setTotalDhikr(total);
+//     } catch (error) {
+//       console.error('Failed to fetch tasbeeh data');
+//     }
+//   };
+
+//   const fetchMonthlyCompletion = async () => {
+//     try {
+//       const now = new Date();
+//       const year = now.getFullYear();
+//       const month = String(now.getMonth() + 1).padStart(2, '0');
+//       const res = await axios.get(`/prayerbook/stats/${year}/${month}`);
+//       if (res.data.success) {
+//         setMonthlyCompletion(res.data.data.completionRate || 0);
+//       }
+//     } catch (error) {
+//       console.error('Failed to fetch monthly stats');
+//     }
+//   };
+
+//   const fetchUserRank = async () => {
+//     try {
+//       const res = await axios.get('/leaderboard/rank');
+//       if (res.data.success) {
+//         const rank = res.data.data.streakRank || res.data.data.allDaysRank;
+//         setGlobalRank(rank ? `#${rank}` : '#?');
+//       }
+//     } catch (error) {
+//       console.error('Failed to fetch user rank');
+//     }
+//   };
+
+//   const fetchTodayPrayers = async () => {
+//     try {
+//       const res = await axios.get('/prayerbook/today');
+//       setTodayPrayers(res.data);
+//     } catch (error) {
+//       console.error('Failed to fetch today’s prayers');
+//       setTodayPrayers({ Fajr: false, Dhuhr: false, Asr: false, Maghrib: false, Isha: false });
+//     }
+//   };
+
+//   const fetchTodayDhikr = async () => {
+//     try {
+//       const today = new Date().toISOString().split('T')[0];
+//       const res = await axios.get(`/tasbeeh/daily-totals?days=1`);
+//       if (res.data.success && res.data.data.length > 0) {
+//         const dayData = res.data.data.find(d => d._id === today);
+//         setTodayDhikr(dayData ? dayData.total : 0);
+//       }
+//       const tasbeehRes = await axios.get('/tasbeeh');
+//       const sorted = tasbeehRes.data.data
+//         .sort((a, b) => (b.currentCount || 0) - (a.currentCount || 0))
+//         .slice(0, 3);
+//       setTopTasbeehs(sorted);
+//     } catch (error) {
+//       console.error('Failed to fetch today’s dhikr');
+//     }
+//   };
+
+//   const pickRandomDua = () => {
+//     let newIndex;
+//     do {
+//       newIndex = Math.floor(Math.random() * duas.length);
+//     } while (duas[newIndex] === duaOfDay && duas.length > 1);
+//     setDuaOfDay(duas[newIndex]);
+//   };
+
+//   const prayerProgress = todayPrayers
+//     ? (Object.values(todayPrayers).filter(Boolean).length / 5) * 100
+//     : 0;
+
+//   const handleRankPreference = async (accept) => {
+//     try {
+//       const { data } = await axios.put('/user/toggle-rank');
+//       if (data.success) {
+//         setShowRank(data.showRank);
+//         await refreshUser();
+//         toast.success(data.showRank ? 'Rank is now visible' : 'Rank hidden');
+//       }
+//     } catch (error) {
+//       toast.error('Failed to update preference');
+//     } finally {
+//       setFirstTimeRankPrompt(false);
+//       setShowRankModal(false);
+//       localStorage.setItem('rankPromptShown', 'true');
+//     }
+//   };
+
+//   const openRankSettings = () => {
+//     setShowRankModal(true);
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-slate-50 pb-12">
+//       {/* Top Decorative Header */}
+//       <div className="bg-emerald-700 pt-8 pb-24 px-6 mb-[-80px]">
+//         <div className="max-w-6xl mx-auto flex flex-wrap items-start justify-between gap-4">
+//           {/* Left side: greeting and date */}
+//           <div>
+//             <h1 className="text-2xl md:text-3xl font-bold text-white">
+//               Assalamu Alaikum,{' '}
+//               <span className="text-emerald-200">{user?.name || 'User'}</span>!
+//             </h1>
+//             <p className="text-emerald-100/80 mt-1 text-sm md:text-base">
+//               {new Date().toLocaleDateString('en-US', {
+//                 weekday: 'long',
+//                 day: 'numeric',
+//                 month: 'long',
+//               })}
+//             </p>
+//           </div>
+
+//           {/* Right side: settings and streak – always visible */}
+//           <div className="flex items-center gap-2">
+//             <button
+//               onClick={openRankSettings}
+//               className="bg-emerald-600/50 hover:bg-emerald-600 backdrop-blur-md rounded-full p-2 border border-emerald-400/30"
+//               title="Rank Settings"
+//             >
+//               <Settings className="w-4 h-4 text-white" />
+//             </button>
+//             <div className="bg-emerald-600/50 backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-2 border border-emerald-400/30">
+//               <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+//               <span className="text-white font-semibold text-sm">
+//                 {user?.streak || 0} Day Streak!
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from '../utils/axios';
 import DownloadButtons from '../components/DownloadButtons';
-import StepCounter from '../components/StepCounter';
 import {
   Book, CircleDot, Trophy, ArrowRight, Calendar, Star,
   Heart, RefreshCw, Sun, Moon, Loader2, BookOpen,
-  CheckCircle, XCircle, ListTodo
+  CheckCircle, XCircle, ListTodo, BarChart2, Settings, LogOut, Menu
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import duas from '../data/dua';
 
 const prayerList = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -21,8 +213,24 @@ export default function Dashboard() {
   const [todayPrayers, setTodayPrayers] = useState(null);
   const [todayDhikr, setTodayDhikr] = useState(0);
   const [topTasbeehs, setTopTasbeehs] = useState([]);
-  const { user } = useAuth();
+  const [showRank, setShowRank] = useState(false);
+  const [showRankModal, setShowRankModal] = useState(false);
+  const [firstTimeRankPrompt, setFirstTimeRankPrompt] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchTotalDhikr();
@@ -31,7 +239,13 @@ export default function Dashboard() {
     fetchTodayPrayers();
     fetchTodayDhikr();
     setDailyDua();
-  }, []);
+    if (user) {
+      setShowRank(user.showRank || false);
+      if (!user.showRank && !localStorage.getItem('rankPromptShown')) {
+        setFirstTimeRankPrompt(true);
+      }
+    }
+  }, [user]);
 
   const getDailyDuaIndex = () => {
     const today = new Date();
@@ -121,11 +335,39 @@ export default function Dashboard() {
     ? (Object.values(todayPrayers).filter(Boolean).length / 5) * 100
     : 0;
 
+  const handleRankPreference = async (accept) => {
+    try {
+      const { data } = await axios.put('/user/toggle-rank');
+      if (data.success) {
+        setShowRank(data.showRank);
+        await refreshUser();
+        toast.success(data.showRank ? 'Rank is now visible' : 'Rank hidden');
+      }
+    } catch (error) {
+      toast.error('Failed to update preference');
+    } finally {
+      setFirstTimeRankPrompt(false);
+      setShowRankModal(false);
+      localStorage.setItem('rankPromptShown', 'true');
+    }
+  };
+
+  const openRankSettings = () => {
+    setShowRankModal(true);
+    setMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
       {/* Top Decorative Header */}
       <div className="bg-emerald-700 pt-8 pb-24 px-6 mb-[-80px]">
-        <div className="max-w-6xl mx-auto flex justify-between items-start">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-start justify-between gap-4">
+          {/* Left side: greeting and date */}
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
               Assalamu Alaikum,{' '}
@@ -139,14 +381,50 @@ export default function Dashboard() {
               })}
             </p>
           </div>
-          <div className="hidden md:flex bg-emerald-600/50 backdrop-blur-md rounded-full px-4 py-2 items-center gap-2 border border-emerald-400/30">
-            <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
-            <span className="text-white font-semibold text-sm">
-              {user?.streak || 0} Day Streak!
-            </span>
+
+          {/* Right side: menu dropdown and streak */}
+          <div className="flex items-center gap-2">
+            {/* Streak badge – always visible */}
+            <div className="bg-emerald-600/50 backdrop-blur-md rounded-full px-4 py-2 flex items-center gap-2 border border-emerald-400/30">
+              <Star className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+              <span className="text-white font-semibold text-sm">
+                {user?.streak || 0} Day Streak!
+              </span>
+            </div>
+
+            {/* Menu dropdown */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="bg-emerald-600/50 hover:bg-emerald-600 backdrop-blur-md rounded-full p-2 border border-emerald-400/30"
+                title="Menu"
+              >
+                <Menu className="w-4 h-4 text-white" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
+                  <button
+                    onClick={openRankSettings}
+                    className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
+                  >
+                    <Settings size={16} className="text-slate-500" />
+                    Rank Settings
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+                  >
+                    <LogOut size={16} className="text-red-500" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
 
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         {/* First row: 3 cards */}
@@ -174,8 +452,8 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Second row: 2 cards (centered on medium screens) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:max-w-2xl md:mx-auto lg:max-w-full lg:mx-0">
+        {/* Second row: 3 cards (Tasks, Leaderboard, Analytics) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <NavCard
             title="Tasks"
             desc="Manage daily tasks"
@@ -183,7 +461,6 @@ export default function Dashboard() {
             borderColor="hover:border-emerald-500"
             onClick={() => navigate('/tasks')}
           />
-          
           <NavCard
             title="Leaderboard"
             desc="Compete with friends"
@@ -191,10 +468,17 @@ export default function Dashboard() {
             borderColor="hover:border-amber-500"
             onClick={() => navigate('/leaderboard')}
           />
+          <NavCard
+            title="Analytics"
+            desc="View site analytics"
+            icon={<BarChart2 className="w-6 h-6 text-emerald-600" />}
+            borderColor="hover:border-emerald-500"
+            onClick={() => navigate('/analytics')}
+          />
         </div>
 
-        {/* Reports, Summary, and Step Counter Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 mb-8">
+        {/* Reports and Summary Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 mb-8">
           <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-6 text-white shadow-lg">
             <h3 className="font-bold text-lg mb-2">Generate Reports</h3>
             <p className="text-emerald-100 text-sm mb-6">
@@ -211,14 +495,24 @@ export default function Dashboard() {
             <div className="space-y-3">
               <SummaryRow label="Total Dhikr" value={totalDhikr.toLocaleString()} />
               <SummaryRow label="This Month" value={`${monthlyCompletion}%`} />
-              <SummaryRow label="Global Rank" value={globalRank} />
+              {showRank ? (
+                <SummaryRow label="Global Rank" value={globalRank} />
+              ) : (
+                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                  <span className="text-slate-500 text-sm">Global Rank</span>
+                  <button
+                    onClick={openRankSettings}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold"
+                  >
+                    Show my rank
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-
-          <StepCounter />
         </div>
 
-        {/* Second Row: Today's Prayer & Today's Dhikr */}
+        {/* Today's Prayer & Today's Dhikr */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Today's Prayer Progress Card */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
@@ -353,6 +647,70 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* First-time rank prompt modal */}
+      {firstTimeRankPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-slate-800 mb-4">See your rank?</h3>
+            <p className="text-slate-600 mb-6">
+              Would you like to see your global ranking on the leaderboard? This will display your position in the Quick Summary section. You can change this anytime from the settings ⚙️ icon.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleRankPreference(true)}
+                className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700"
+              >
+                Yes, show my rank
+              </button>
+              <button
+                onClick={() => handleRankPreference(false)}
+                className="flex-1 bg-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-300"
+              >
+                No, thanks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rank settings modal */}
+      {showRankModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-slate-800 mb-4">Rank Visibility</h3>
+            <p className="text-slate-600 mb-6">
+              Your global rank is currently <span className="font-bold">{showRank ? 'visible' : 'hidden'}</span>. You can change this at any time.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleRankPreference(true)}
+                className={`flex-1 py-3 rounded-xl font-semibold ${
+                  showRank ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                }`}
+                disabled={showRank}
+              >
+                Show Rank
+              </button>
+              <button
+                onClick={() => handleRankPreference(false)}
+                className={`flex-1 py-3 rounded-xl font-semibold ${
+                  !showRank ? 'bg-slate-100 text-slate-700 cursor-default' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                }`}
+                disabled={!showRank}
+              >
+                Hide Rank
+              </button>
+            </div>
+            <button
+              onClick={() => setShowRankModal(false)}
+              className="w-full mt-4 py-2 text-slate-400 hover:text-slate-600 text-sm font-semibold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

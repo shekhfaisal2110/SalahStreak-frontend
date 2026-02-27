@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
 import {
   Plus, RotateCcw, Trash2, CheckCircle, Star, PlusCircle, Fingerprint,
-  X, Edit2, ArrowLeft, Pin, Eye, EyeOff, BarChart3
+  X, Edit2, ArrowLeft, Pin, Eye, EyeOff, BarChart3, Search
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,7 @@ const TasbeehList = () => {
   const [selectedTasbeeh, setSelectedTasbeeh] = useState(null);
   const [customCount, setCustomCount] = useState('');
   const [newTarget, setNewTarget] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,32 +55,103 @@ const TasbeehList = () => {
     }
   };
 
+  // const handleIncrement = async (id, count = 1) => {
+  //   const targetTasbeeh = tasbeehs.find(t => t._id === id);
+  //   if (!targetTasbeeh || targetTasbeeh.completed) return;
+
+  //   // Optimistic update
+  //   setTasbeehs(prev => prev.map(t =>
+  //     t._id === id
+  //       ? { ...t, currentCount: Math.min(t.currentCount + count, t.targetCount) }
+  //       : t
+  //   ));
+
+  //   try {
+  //     const { data } = await axios.put(`/tasbeeh/${id}/increment`, { count });
+  //     if (data.data.completed) {
+  //       toast.success(
+  //         <div className="text-center py-2">
+  //           <p className="font-bold text-xl mb-1">ماشاء اللہ</p>
+  //           <p className="text-sm">Tasbeeh Completed!</p>
+  //         </div>,
+  //         { duration: 5000 }
+  //       );
+  //     }
+
+  //     // Send analytics event for every 10th increment
+  //     if (data.data.currentCount % 10 === 0 && data.data.currentCount > 0) {
+  //       try {
+  //         await axios.post('/analytics/event', {
+  //           eventType: 'tasbeeh_10_increment',
+  //           metadata: { tasbeehId: id, count: data.data.currentCount }
+  //         });
+  //       } catch (eventError) {
+  //         console.error('Analytics event failed:', eventError);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     toast.error('Failed to update count');
+  //     fetchTasbeehs(); // revert on error
+  //   }
+  // };
+
   const handleIncrement = async (id, count = 1) => {
-    const targetTasbeeh = tasbeehs.find(t => t._id === id);
-    if (!targetTasbeeh || targetTasbeeh.completed) return;
+  const targetTasbeeh = tasbeehs.find(t => t._id === id);
+  if (!targetTasbeeh || targetTasbeeh.completed) return;
 
-    setTasbeehs(prev => prev.map(t =>
-      t._id === id
-        ? { ...t, currentCount: Math.min(t.currentCount + count, t.targetCount) }
-        : t
-    ));
+  const oldCount = targetTasbeeh.currentCount;
+  const newCount = Math.min(oldCount + count, targetTasbeeh.targetCount);
 
-    try {
-      const { data } = await axios.put(`/tasbeeh/${id}/increment`, { count });
-      if (data.data.completed) {
-        toast.success(
-          <div className="text-center py-2">
-            <p className="font-bold text-xl mb-1">ماشاء اللہ</p>
-            <p className="text-sm">Tasbeeh Completed!</p>
-          </div>,
-          { duration: 5000 }
-        );
-      }
-    } catch (error) {
-      toast.error('Failed to update count');
-      fetchTasbeehs();
+  // Optimistic update
+  setTasbeehs(prev => prev.map(t =>
+    t._id === id ? { ...t, currentCount: newCount } : t
+  ));
+
+  try {
+    const { data } = await axios.put(`/tasbeeh/${id}/increment`, { count });
+    if (data.data.completed) {
+      toast.success(
+        <div className="text-center py-2">
+          <p className="font-bold text-xl mb-1">ماشاء اللہ</p>
+          <p className="text-sm">Tasbeeh Completed!</p>
+        </div>,
+        { duration: 5000 }
+      );
     }
-  };
+
+    // Calculate how many 10‑unit milestones were crossed
+    const oldMilestones = Math.floor(oldCount / 10);
+    const newMilestones = Math.floor(newCount / 10);
+    const viewsToAdd = newMilestones - oldMilestones;
+
+    if (viewsToAdd > 0) {
+      try {
+        await axios.post('/analytics/pageview', {
+          route: '/tasbeeh',
+          views: viewsToAdd
+        });
+      } catch (pvError) {
+        console.error('Page view recording failed:', pvError);
+      }
+    }
+
+    // Send analytics event for every 10th increment (existing)
+    if (data.data.currentCount % 10 === 0 && data.data.currentCount > 0) {
+      try {
+        await axios.post('/analytics/event', {
+          eventType: 'tasbeeh_10_increment',
+          metadata: { tasbeehId: id, count: data.data.currentCount }
+        });
+      } catch (eventError) {
+        console.error('Analytics event failed:', eventError);
+      }
+    }
+  } catch (error) {
+    toast.error('Failed to update count');
+    fetchTasbeehs(); // revert on error
+  }
+};
+
 
   const openAddModal = (tasbeeh) => {
     setSelectedTasbeeh(tasbeeh);
@@ -155,7 +227,16 @@ const TasbeehList = () => {
     }
   };
 
-  const sortedTasbeehs = [...tasbeehs].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  // Filter tasbeehs based on search query (case‑insensitive)
+  const filteredTasbeehs = tasbeehs.filter(t =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.arabicName && t.arabicName.includes(searchQuery))
+  );
+
+  // Sort: pinned first
+  const sortedTasbeehs = [...filteredTasbeehs].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+  const showSearchBar = tasbeehs.length >= 10;
 
   if (loading) {
     return (
@@ -167,7 +248,7 @@ const TasbeehList = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
-      {/* Header with back button and summary icon */}
+      {/* Header */}
       <nav className="bg-white border-b border-slate-200 px-6 py-6 sticky top-0 z-20">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -184,7 +265,6 @@ const TasbeehList = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* New icon to navigate to summary page */}
             <button
               onClick={() => navigate('/tasbeeh/summary')}
               className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-full transition-colors"
@@ -203,6 +283,34 @@ const TasbeehList = () => {
       </nav>
 
       <div className="max-w-5xl mx-auto p-6">
+        {/* Search Bar – visible when 10 or more tasbeehs */}
+        {showSearchBar && (
+          <div className="relative mb-6">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              <Search size={20} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name or Arabic text..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
+          </div>
+        )}
+
+        {/* No results message */}
+        {showSearchBar && searchQuery && filteredTasbeehs.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 mb-6">
+            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-700">No tasbeeh found</h3>
+            <p className="text-sm text-slate-500 mt-1">Try a different search term.</p>
+          </div>
+        )}
+
+        {/* Tasbeeh Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sortedTasbeehs.map(tasbeeh => {
             const progress = (tasbeeh.currentCount / tasbeeh.targetCount) * 100;
@@ -321,7 +429,7 @@ const TasbeehList = () => {
         )}
       </div>
 
-      {/* Custom Increment Modal (unchanged) */}
+      {/* Custom Increment Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 relative">
@@ -362,7 +470,7 @@ const TasbeehList = () => {
         </div>
       )}
 
-      {/* Edit Goal Modal (unchanged) */}
+      {/* Edit Goal Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 relative">
